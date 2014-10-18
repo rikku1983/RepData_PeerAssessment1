@@ -1,0 +1,86 @@
+---
+title: "SL's Assignment 1"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Download dataset into the working directory
+read it into R as "df"
+convert "date" col into Date class
+```{r, echo=TRUE}
+df<-read.csv("H:/activity.csv")
+df[,2] <- as.Date(df[,2])
+```
+
+1. Mean of total number steps taken per day
+```{r, echo=TRUE}
+total_steps_day<- tapply(df$steps, df$date, FUN = sum, na.rm=TRUE)
+hist(total_steps_day, breaks=8, xlab = "Total steps taken per day")
+mean(total_steps_day)
+median(total_steps_day)
+```
+The mean is 9354.23
+The median is 10395
+
+2. Average daily activity pattern and output a figuer
+```{r, echo=TRUE}
+x <- as.factor(df$interval)
+df <- cbind(df, x)
+interval_steps <- tapply(df$steps, df$x, mean, na.rm=TRUE)
+plot(interval_steps, type="l", xaxt="n")
+axis(1, at=1:288,label=unique(x))
+interval_steps[interval_steps == max(interval_steps)]
+```
+The interval with most steps in a day is 835
+
+3.Imputing missing values
+```{r,echo=TRUE}
+sum(is.na(df$steps))
+```
+in total there are 2304 rows with NA
+
+Process NA values in a clone dataset from dataset. NA values are replaced by mean steps per interval across all days
+```{r,echo=TRUE}
+df2 <- df
+for(i in 1:length(df2[,1])){
+        if(is.na(df2$steps[i])){df2$steps[i] <- interval_steps[df2$x[i]]}
+}
+```
+
+plot histogram, calculate mean and median
+```{r,echo=TRUE}
+total_steps_day2<- tapply(df2$steps, df2$date, FUN = sum)
+hist(total_steps_day2, breaks=8, xlab = "Total steps taken per day")
+mean(total_steps_day2)
+median(total_steps_day2)
+```
+mean: 10766.19
+median: 10766.19
+
+Processed data shows different distributions, means, and medians.
+
+4.activity patterns between weekdays and weekends
+Process df2 by adding a new factor indicating weekdays or weekends
+```{r,echo=TRUE}
+weekday <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+df2$days <- "weekdays"
+df2[!weekdays(df2[,2]) %in% weekday, 5] <- "weekends"
+df2$days <- as.factor(df2$days)
+dfweekends <- split(df2,df2$days)[[2]]
+dfweekdays <- split(df2,df2$days)[[1]]
+interval_weekdays <- tapply(dfweekdays$steps, dfweekdays$x, mean)
+interval_weekends <- tapply(dfweekends$steps, dfweekends$x, mean)
+```
+
+plot mean steps of each intervals for weekdays and weekends respectively
+```{r,echo=TRUE}
+plot(interval_steps, type="n", xaxt="n")
+axis(1, at=1:288,label=unique(x))
+lines(interval_weekdays, col="red")
+lines(interval_weekends, col="blue")
+legend("topleft", legend=c("weekends","weekdays"), col=c("blue","red"), lty=1)
+```
+
